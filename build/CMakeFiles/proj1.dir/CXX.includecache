@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ryandahan2001/Desktop/dahanr_pa2/src/driver.cpp
+iostream
+-
+string
+-
+filesystem
+-
+fstream
+-
+
