@@ -47,8 +47,9 @@ int main()
         getline(cin, cleanInput);//takes full user input
 
         //if user inputs create
-        if(cleanInput.find("CREATE") == 0)
+        if(cleanInput.find("CREATE") == 0 || cleanInput.find("create"))
         {
+            cout << "in create " << endl;
             action.assign("CREATE");//action is assigned
             cleanInput.erase(0,7);//omit found arguments(and whitespace) from userInput
 
