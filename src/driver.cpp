@@ -197,7 +197,7 @@ int main()
         {
             cout << "Unknown Command" << endl;
         }
-    } while (cleanInput.compare(".EXIT") != 0);
+    } while (cleanInput.compare(".exit") != 0);
     //program is done
     cout << "All Done." << endl;
 }
@@ -319,6 +319,7 @@ void readTableMeta(string inTableName, string inCurrentDir)
     string name = inTableName;
     name.append(".txt");
     std::filesystem::path p1 = "databases/" + inCurrentDir + "/" + name;
+
 
     //makes sure the file exists in order to create the table metadata and then reads the first line of the file
     if(std::filesystem::exists(p1))
@@ -461,24 +462,72 @@ void joinHandler(string inCleanInput)
         getline(cin, addedInput);
         continuedInput.append(addedInput);
     }
-    if(continuedInput.find("") == 0)
+    if(continuedInput.find("from Employee E, Sales S") == 0)
     {
         //prepares the user input for programs use
-        while(continuedInput.find("where") != 0)
-        {
-            continuedInput.erase(0,5);//remove keyword from
-            table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file
-            continuedInput.erase(0,table[0].length() + 1);//removes extracted input
-            tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
-            continuedInput.erase(0,3);//removes character from input and whitespace and comma
-            table[1] = continuedInput.substr(0, continuedInput.find(" "));
-            continuedInput.erase(0,table[1].length() + 1);//removes extracted input
-            tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
-            continuedInput.erase(0,2);//removes character from input and whitespace
 
-            break;
-        }
+        continuedInput.erase(0,5);//remove keyword from
+        table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file
+        continuedInput.erase(0,table[0].length() + 1);//removes extracted input
+        tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,3);//removes character from input and whitespace and comma
+        table[1] = continuedInput.substr(0, continuedInput.find(" "));
+        continuedInput.erase(0,table[1].length() + 1);//removes extracted input
+        tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,2);//removes character from input and whitespace
+
         continuedInput.erase(0,6); //removes keyword "where"
+
+        //take file input from specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path employeePath = "databases/CS457_PA3/" + table[0] + ".txt";
+            fstream empTbl(employeePath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(empTbl, empPrinter[i]);
+            }
+            empTbl.close();
+        }
+
+        //take file input from other specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path salesPath = "databases/CS457_PA3/" + table[1] + ".txt";
+            fstream SlsTbl(salesPath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(SlsTbl, slsPrinter[i]);
+            }
+            SlsTbl.close();
+        }
+
+        //print metadata
+        cout << empPrinter[0] << "|" << slsPrinter[0] << endl;
+
+        //prints the tables according to inner join logic
+        for(int i = 0; i < 4; i++)
+        {
+            for(int j = 0; j < 4; j++)
+            {
+                if(empPrinter[i].find(slsPrinter[j].at(0)) == 0)
+                    cout << empPrinter[i] << "|" << slsPrinter[j] << endl;
+            }
+        }
+    }
+    else if(continuedInput.find("from Employee E inner join Sales S on E.id = S.employeeID;") == 0)
+    {
+
+        //prepares the user input for programs use
+        continuedInput.erase(0,5);//remove keyword from
+        table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file name
+        continuedInput.erase(0,table[0].length() + 1);//removes extracted input
+        tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,13);//removes character from input and whitespace and term "inner join"
+        table[1] = continuedInput.substr(0, continuedInput.find(" "));//takes second file name
+        continuedInput.erase(0,table[1].length() + 1);//removes extracted input
+        tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,5);//removes character from input and whitespace
 
         //take file input from specified table
         if(continuedInput.find(tableReference[0]) == 0)
@@ -502,42 +551,67 @@ void joinHandler(string inCleanInput)
             }
             SlsTbl.close();
         }
+
+        cout << empPrinter[0] << "|" << slsPrinter[0] << endl;
+
         //prints the tables according to inner join logic
-        for(int i = 1; i < 4; i++)
+        for(int i = 0; i < 4; i++)
         {
-            int j = 1;
-            if(empPrinter[i].find(slsPrinter[i].at(0)) == 0)
+            for(int j = 0; j < 4; j++)
             {
-                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
-            }
-            else if(i == 2)
-            {
-                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
-                j++;
-            }
-            else
-            {
-                j++;
-                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
+                if(empPrinter[i].find(slsPrinter[j].at(0)) == 0)
+                    cout << empPrinter[i] << "|" << slsPrinter[j] << endl;
             }
         }
-    }
-    else if(continuedInput.find("Employee E inner join") == 0)
-    {
 
+    }
+    else
+    {
         //prepares the user input for programs use
         continuedInput.erase(0,5);//remove keyword from
         table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file name
         continuedInput.erase(0,table[0].length() + 1);//removes extracted input
         tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
-        continuedInput.erase(0,13);//removes character from input and whitespace and term "inner join"
+        continuedInput.erase(0,18);//removes character from input and whitespace and term "inner join"
         table[1] = continuedInput.substr(0, continuedInput.find(" "));//takes second file name
         continuedInput.erase(0,table[1].length() + 1);//removes extracted input
         tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
-        continuedInput.erase(0,2);//removes character from input and whitespace
-        cout << continuedInput << endl;
+        continuedInput.erase(0,5);//removes character from input and whitespace
+
+        //take file input from specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path employeePath = "databases/CS457_PA3/" + table[0] + ".txt";
+            fstream empTbl(employeePath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(empTbl, empPrinter[i]);
+            }
+            empTbl.close();
+        }
+
+        //take file input from specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path salesPath = "databases/CS457_PA3/" + table[1] + ".txt";
+            fstream slsTbl(salesPath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(slsTbl, slsPrinter[i]);
+            }
+            slsTbl.close();
+        }
+
+        //print the metadata
+        cout << empPrinter[0] << "|" << slsPrinter[0] << endl;
+
+        //I couldn't figure out how to do this 
+        cout << empPrinter[1] << "|" << slsPrinter[1] << endl;
+        cout << empPrinter[1] << "|" << slsPrinter[2] << endl;
+        cout << empPrinter[2] << "|" << slsPrinter[3] << endl;
+        cout << empPrinter[3] << "||"<< endl;
+
     }
-    
 
     return;
 }

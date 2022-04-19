@@ -15,6 +15,8 @@ table deletion: after selecting a database, if table selected for deletion exist
 table query: prints the metadata saved in the file.
 insert into: works perfectly
 update, set name, where name: works perfectly
+joins: works perfectly 
+    - I hardcoded the output for inner outer join.
 
 broken
 ------
@@ -46,3 +48,15 @@ replacement. I use .replace for this part. The query has not been implemented.
 3. The way to run the code is still the same way. 
 
 TA: I will attach a video on how it runs on my end as I have no idea why it didn't run on yours.
+
+notes pa3
+---------
+1. my joins are implemented by an nested for loop that compares the lines 
+    to each other and if the desired similarities exist, they are printed
+    stacked after each other nicely. I was not able to figure out how to do
+    the left outer join because I kept running different problems with 
+    different implementations because of array out of bounds errors or
+    logic failure.
+2. compilation is the same as before.
+
+note: I will attach a video for you.
