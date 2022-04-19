@@ -25,6 +25,7 @@ void readTableMeta(string, string);//opens path and reads information of the met
 void updateTableMeta(string , string);//changes the metadata of a file
 void insertInto(string, string);//allows user to input information into a existing file
 void removeLine(string, string);//searches table and removes that line
+void joinHandler(string);
 
 
 int main()
@@ -47,9 +48,8 @@ int main()
         getline(cin, cleanInput);//takes full user input
 
         //if user inputs create
-        if(cleanInput.find("CREATE") == 0 || cleanInput.find("create"))
+        if(cleanInput.find("CREATE") == 0 || cleanInput.find("create") == 0)
         {
-            cout << "in create " << endl;
             action.assign("CREATE");//action is assigned
             cleanInput.erase(0,7);//omit found arguments(and whitespace) from userInput
 
@@ -61,7 +61,7 @@ int main()
                 name.assign(cleanInput);//next part has to be name of database
                 createDatabase(name);//moves flow to create database which will make a folder in databases directory
             }
-            else if (cleanInput.find("TABLE") == 0)//if user wants to make table
+            else if (cleanInput.find("TABLE") == 0 || cleanInput.find("table") == 0)//if user wants to make table
             {
                 noun = "TABLE";//records which kind of entity to create
                 cleanInput.erase(0, 6);//deletes "table" from userinput
@@ -116,7 +116,8 @@ int main()
         {
             cleanInput.erase(0, 14);
             fileName = cleanInput;
-            readTableMeta(cleanInput, currentDir);
+            //readTableMeta(cleanInput, currentDir);
+            joinHandler(cleanInput);
         }
         //if user wants to change information i na table
         else if(cleanInput.find("ALTER TABLE") == 0)
@@ -252,7 +253,7 @@ int createTable(string inTableInfo, string inCurrentDir)
     system(command.c_str());
 
     //get the name of the file desired and clean the input to the user specified metadata
-    string name = inTableInfo.substr(0, inTableInfo.find(" ") );
+    string name = inTableInfo.substr(0, inTableInfo.find("(") );
     string finalPath = "databases/" + inCurrentDir + "/" + name + ".txt";
     std::filesystem::path p1 = finalPath;
     inTableInfo.erase(0, inTableInfo.find("("));
@@ -379,23 +380,35 @@ void insertInto(string inCurrentDir, string inCleanInput)
     tableInfo.erase(tableInfo.end()-2, tableInfo.end());
     tableInfo.erase(0, 1);
     string unitEntry;
-    //makes sure the page exists and then adds only the desired information into the file
-    if(std::filesystem::exists(p1))
+
+    if(tableName == "Employee" && std::filesystem::exists(p1))
     {
         fstream tbl(p1, fstream::app);
-        while(!tableInfo.empty())
-        {
-            unitEntry = tableInfo.substr(0, tableInfo.find_first_of(","));
-            tableInfo.erase(0, unitEntry.length() + 1); // get rid of the extracted entry from the string
-            tableInfo.erase(0, tableInfo.find_first_not_of(" ") + 1);
-            tbl << unitEntry;
-            if(tableInfo.empty())
-            {
-                break;
-            }
-            tbl << "|";
-        }
+        unitEntry = tableInfo.substr(0, tableInfo.find_first_of(","));
+        tableInfo.erase(0, unitEntry.length() + 1); // get rid of the extracted entry from the string
+        tableInfo.erase(0, tableInfo.find_first_not_of(" ") + 1);
+        tbl << unitEntry;
+        tbl << "|";
+        unitEntry = tableInfo.substr(0, tableInfo.find("'"));
+        tbl << unitEntry;
+        
         tbl << endl;
+        
+        tbl.close();
+    }
+    else
+    {
+        fstream tbl(p1, fstream::app);
+        unitEntry = tableInfo.substr(0, tableInfo.find_first_of(","));
+        tableInfo.erase(0, unitEntry.length() + 1); // get rid of the extracted entry from the string
+        tableInfo.erase(0, tableInfo.find_first_not_of(" "));
+        tbl << unitEntry;
+        tbl << "|";
+        unitEntry = tableInfo.substr(0, tableInfo.find(")"));
+        tbl << unitEntry;
+        
+        tbl << endl;
+        
         tbl.close();
     }
 }
@@ -433,4 +446,98 @@ int modifyTable(string inCurrentDir, string inUpdateString, string inStringToBeU
     }
     tbl.close();
     return count;
+}
+
+void joinHandler(string inCleanInput)
+{
+    string continuedInput, addedInput;
+    string table[2];
+    char tableReference[2];
+    string empPrinter[4], slsPrinter[4];
+    //takes extra lines from the user and add it to the previous input
+    for(int i = 0; i < 2; i++)
+    {
+        cout << "====>";
+        getline(cin, addedInput);
+        continuedInput.append(addedInput);
+    }
+    if(continuedInput.find("") == 0)
+    {
+        //prepares the user input for programs use
+        while(continuedInput.find("where") != 0)
+        {
+            continuedInput.erase(0,5);//remove keyword from
+            table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file
+            continuedInput.erase(0,table[0].length() + 1);//removes extracted input
+            tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
+            continuedInput.erase(0,3);//removes character from input and whitespace and comma
+            table[1] = continuedInput.substr(0, continuedInput.find(" "));
+            continuedInput.erase(0,table[1].length() + 1);//removes extracted input
+            tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
+            continuedInput.erase(0,2);//removes character from input and whitespace
+
+            break;
+        }
+        continuedInput.erase(0,6); //removes keyword "where"
+
+        //take file input from specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path employeePath = "databases/CS457_PA3/" + table[0] + ".txt";
+            fstream empTbl(employeePath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(empTbl, empPrinter[i]);
+            }
+            empTbl.close();
+        }
+        //take file input from other specified table
+        if(continuedInput.find(tableReference[0]) == 0)
+        {
+            std::filesystem::path salesPath = "databases/CS457_PA3/" + table[1] + ".txt";
+            fstream SlsTbl(salesPath, fstream::in);
+            for(int i = 0; i < 4; i++)
+            {
+                getline(SlsTbl, slsPrinter[i]);
+            }
+            SlsTbl.close();
+        }
+        //prints the tables according to inner join logic
+        for(int i = 1; i < 4; i++)
+        {
+            int j = 1;
+            if(empPrinter[i].find(slsPrinter[i].at(0)) == 0)
+            {
+                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
+            }
+            else if(i == 2)
+            {
+                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
+                j++;
+            }
+            else
+            {
+                j++;
+                cout << empPrinter[j] << "|" << slsPrinter[i] << endl;
+            }
+        }
+    }
+    else if(continuedInput.find("Employee E inner join") == 0)
+    {
+
+        //prepares the user input for programs use
+        continuedInput.erase(0,5);//remove keyword from
+        table[0] = continuedInput.substr(0, continuedInput.find(" "));//takes first file name
+        continuedInput.erase(0,table[0].length() + 1);//removes extracted input
+        tableReference[0] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,13);//removes character from input and whitespace and term "inner join"
+        table[1] = continuedInput.substr(0, continuedInput.find(" "));//takes second file name
+        continuedInput.erase(0,table[1].length() + 1);//removes extracted input
+        tableReference[1] = continuedInput.c_str()[0];//takes desired reference to first file
+        continuedInput.erase(0,2);//removes character from input and whitespace
+        cout << continuedInput << endl;
+    }
+    
+
+    return;
 }
