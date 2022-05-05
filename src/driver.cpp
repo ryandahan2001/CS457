@@ -1,12 +1,11 @@
 /*
-Ryan Dahan - CS457 - project 1
+Ryan Dahan - CS457 - project 4
 Program that allows a database user to manage the metadata of their relational data
 
 Please see projectInfo.txt for information regarding this project.
 
- Functionalities:
-o Database creation, deletion (CREATE,DROP)
-o Table creation, deletion, update, and query (CREATE,DROP,ALTER,SELECT)
+Functionalities:
+    see projectinfo.text
 */
 #include <iostream>
 #include <string>
@@ -25,8 +24,8 @@ void readTableMeta(string, string);//opens path and reads information of the met
 void updateTableMeta(string , string);//changes the metadata of a file
 void insertInto(string, string);//allows user to input information into a existing file
 void removeLine(string, string);//searches table and removes that line
-void joinHandler(string);
-void transactionHandler(string, string);
+void joinHandler(string);//handles printing queries
+void transactionHandler(string, string);//handles updates (transaction protection included)
 
 
 int main()
@@ -198,7 +197,7 @@ int main()
             else
                 cout << "continued input fail" << endl;
         }
-        else if(cleanInput.find("begin transaction") == 0)
+        else if(cleanInput.find("begin transaction") == 0)//allows program to move flow to transactionHandler to support multiprocess use
         {
             cout << "Transaction Starts." << endl;
             transactionHandler(cleanInput, "databases/CS457_PA4/Flights");
@@ -639,16 +638,9 @@ void transactionHandler(string inCleanInput, string inPath)
 
     std::filesystem::path path = inPath + ".txt";
     std::filesystem::path pathLocker = inPath + "Locker.txt";
-    
-
 
     cout << "==>";//prompt user input
     getline(cin, input);
-
-    
-
-    
-    
     
     if(!std::filesystem::exists(pathLocker) && input.find("update") == 0)//locker existing indicates someone else is doing a transaction
     {
@@ -673,53 +665,52 @@ void transactionHandler(string inCleanInput, string inPath)
         changeIndicatorVar = input.substr(0, input.find(" "));
         input.erase(0, changeIndicatorVar.length() + 3);//removes whitespace and equals sign
 
-        changeIndicatorVal = input.substr(0, input.find(";"));
+        changeIndicatorVal = input.substr(0, input.find(";"));//takes the final information in the update 
 
-        for(int i = 0; !updater.eof(); i++)
+        for(int i = 0; !updater.eof(); i++)//find the information from the file and change the string in the program
         {
             getline(updater, fileInformation[i]);
             if(fileInformation[i].find(changeIndicatorVal) == 0)
             {
-                fileChanger = fileInformation[i].substr(0, fileInformation[i].find("|"));
-                fileChanger += "|" + changeVal;
-                fileInformation[i] = fileChanger;
+                fileChanger = fileInformation[i].substr(0, fileInformation[i].find("|"));//keep the seat
+                fileChanger += "|" + changeVal;//change the availability
+                fileInformation[i] = fileChanger;//save to string array
             }
         }
         updater.close();
         locker.close();
 
-        cout << "==>";
+        cout << "==>";//prompt user input expecting "commit"
         cin >> input;
-        if(input.find("commit") == 0)
+
+        if(input.find("commit") == 0)//user enters commit
         {
-            if(std::filesystem::exists(pathLocker))
+            if(std::filesystem::exists(pathLocker))//checks for locker
             {
                 cout << "Transaction committed" << endl;
             }
-            updater.open(path, fstream::out);
+            updater.open(path, fstream::out);//places updated information back into the file
             for(int i = 0; i < 3; i++)
             {
                 updater << fileInformation[i] << endl;
             }
 
             updater.close();
-            std::filesystem::remove("databases/CS457_PA4/FlightsLocker.txt");
+            std::filesystem::remove("databases/CS457_PA4/FlightsLocker.txt");//removes the locker to enable commits from other processes
         }
     }
-    else
+    else//lock was found
     {  
         cout << "Error: Table Flights is locked!" << endl;
-        cout << "==>";
+        cout << "==>";//prompt user input expecting commit
         cin >> input;
 
-        if(input.find("commit") == 0)
+        if(input.find("commit") == 0)//commit found
         {
-            cout << "Transaction abort" << endl;
+            cout << "Transaction abort" << endl;//abort because the file was locked
             return;
         }
     }    
-
-    
 
     return;
 }
