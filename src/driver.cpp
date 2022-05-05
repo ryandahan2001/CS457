@@ -26,6 +26,7 @@ void updateTableMeta(string , string);//changes the metadata of a file
 void insertInto(string, string);//allows user to input information into a existing file
 void removeLine(string, string);//searches table and removes that line
 void joinHandler(string);
+void transactionHandler(string, string);
 
 
 int main()
@@ -112,12 +113,17 @@ int main()
         }
         //if user wants to refer to specific table
         //from design aspect, it makes the program refer to a specific text file (table)
-        else if(cleanInput.find("SELECT") == 0 || cleanInput.find("select") == 0)//support for both upper and lowercase
+        else if(cleanInput.find("select *") == 0)//support for both upper and lowercase
         {
-            cleanInput.erase(0, 14);
-            fileName = cleanInput;
-            //readTableMeta(cleanInput, currentDir);
-            joinHandler(cleanInput);
+            string fileInformation;
+            std::filesystem::path Flights = "databases/CS457_PA4/Flights.txt";
+            fstream reader(Flights, fstream::in);
+            while(!reader.eof())
+            {
+                getline(reader, fileInformation);
+                cout << fileInformation << endl;
+            }
+            reader.close();
         }
         //if user wants to change information i na table
         else if(cleanInput.find("ALTER TABLE") == 0)
@@ -192,10 +198,15 @@ int main()
             else
                 cout << "continued input fail" << endl;
         }
+        else if(cleanInput.find("begin transaction") == 0)
+        {
+            cout << "Transaction Starts." << endl;
+            transactionHandler(cleanInput, "databases/CS457_PA4/Flights");
+        }
         //allows for the program to clean break if input is not supported
         else
         {
-            cout << "Unknown Command" << endl;
+            continue;
         }
     } while (cleanInput.compare(".exit") != 0);
     //program is done
@@ -378,19 +389,18 @@ void insertInto(string inCurrentDir, string inCleanInput)
 
     //cleans input from the name, semicolon and the first ( of which information then is ready to be extracted
     string tableInfo = inCleanInput.erase(0, tableName.length()+1 + 6);
-    tableInfo.erase(tableInfo.end()-2, tableInfo.end());
-    tableInfo.erase(0, 1);
+    tableInfo.erase(tableInfo.end()-1, tableInfo.end());//remove semi colon
+    tableInfo.erase(0, 2); // remove open parenthesis
     string unitEntry;
 
-    if(tableName == "Employee" && std::filesystem::exists(p1))
+    if(tableName == "Flights" && std::filesystem::exists(p1))
     {
         fstream tbl(p1, fstream::app);
         unitEntry = tableInfo.substr(0, tableInfo.find_first_of(","));
         tableInfo.erase(0, unitEntry.length() + 1); // get rid of the extracted entry from the string
-        tableInfo.erase(0, tableInfo.find_first_not_of(" ") + 1);
         tbl << unitEntry;
         tbl << "|";
-        unitEntry = tableInfo.substr(0, tableInfo.find("'"));
+        unitEntry = tableInfo.substr(0, tableInfo.find(")"));
         tbl << unitEntry;
         
         tbl << endl;
@@ -615,3 +625,102 @@ void joinHandler(string inCleanInput)
 
     return;
 }
+
+void transactionHandler(string inCleanInput, string inPath)
+{
+    string input;//holds user input while in transaction handler
+    string fileName;//holds filename to be accessed to update
+    string changeVar;//holds field name that needs to be changed
+    string changeVal;//holds field value that needs to be used in replacement
+    string changeIndicatorVar;//holds field name to find to replace
+    string changeIndicatorVal;//holds field value to replace when found
+    string fileInformation[10];//holds information from the file
+    string fileChanger;//holds changes to a line from fileInformation[i]
+
+    std::filesystem::path path = inPath + ".txt";
+    std::filesystem::path pathLocker = inPath + "Locker.txt";
+    
+
+
+    cout << "==>";//prompt user input
+    getline(cin, input);
+
+    
+
+    
+    
+    
+    if(!std::filesystem::exists(pathLocker) && input.find("update") == 0)//locker existing indicates someone else is doing a transaction
+    {
+
+        input.erase(0, 7);//removes update from the input
+        fileName = input.substr(0, input.find(" "));
+
+        fstream updater(path, fstream::in);
+        fstream locker(pathLocker, fstream::out);
+
+        input.erase(0, input.find(" "));//removes file name from the string
+        input.erase(0, 4);//removes "set" from string and whitespace
+
+        
+        changeVar = input.substr(0, input.find("="));//removes field name
+
+        input.erase(0, changeVar.length()+2);//removes field name and equals sign
+
+        changeVal = input.substr(0, input.find("where"));
+        input.erase(0, changeVal.length() + 6);//removes where and replacement value
+
+        changeIndicatorVar = input.substr(0, input.find(" "));
+        input.erase(0, changeIndicatorVar.length() + 3);//removes whitespace and equals sign
+
+        changeIndicatorVal = input.substr(0, input.find(";"));
+
+        for(int i = 0; !updater.eof(); i++)
+        {
+            getline(updater, fileInformation[i]);
+            if(fileInformation[i].find(changeIndicatorVal) == 0)
+            {
+                fileChanger = fileInformation[i].substr(0, fileInformation[i].find("|"));
+                fileChanger += "|" + changeVal;
+                fileInformation[i] = fileChanger;
+            }
+        }
+        updater.close();
+        locker.close();
+
+        cout << "==>";
+        cin >> input;
+        if(input.find("commit") == 0)
+        {
+            if(std::filesystem::exists(pathLocker))
+            {
+                cout << "Transaction committed" << endl;
+            }
+            updater.open(path, fstream::out);
+            for(int i = 0; i < 3; i++)
+            {
+                updater << fileInformation[i] << endl;
+            }
+
+            updater.close();
+            std::filesystem::remove("databases/CS457_PA4/FlightsLocker.txt");
+        }
+    }
+    else
+    {  
+        cout << "Error: Table Flights is locked!" << endl;
+        cout << "==>";
+        cin >> input;
+
+        if(input.find("commit") == 0)
+        {
+            cout << "Transaction abort" << endl;
+            return;
+        }
+    }    
+
+    
+
+    return;
+}
+
